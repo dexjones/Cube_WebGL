@@ -1,3 +1,4 @@
+// Vertex Shader: Handles vertex positions and transformations
 var vertexShaderText = 
 [
 'precision mediump float;',
@@ -16,6 +17,7 @@ var vertexShaderText =
 '}'
 ].join('\n');
 
+// Fragment Shader: Defines the colors
 var fragmentShaderText =
 [
 'precision mediump float;',
@@ -42,6 +44,7 @@ var InitDemo = function() {
         alert('Your browser does not support WebGL');
     }
 
+    // Set clear color and enable depth testing
     gl.clearColor(0.75, 0.85, 0.8, 1.0); // R, G, B, Opaque Values
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
@@ -50,6 +53,7 @@ var InitDemo = function() {
     gl.cullFace(gl.BACK);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
+    // Compile shaders
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -67,6 +71,7 @@ var InitDemo = function() {
         return;
     }
 
+    // Link shaders into a program
     var program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
@@ -77,8 +82,10 @@ var InitDemo = function() {
     }
 
     //Tell OpenGL state machine which program should be active
+    // Use the program
     gl.useProgram(program);
-    // Create buffer
+    
+    // Define cube vertices and indices
     var boxVertices = 
     [ // x, y, z              R,G,B
         //Top
@@ -144,6 +151,8 @@ var InitDemo = function() {
         21, 20, 22,
         22, 20, 23
     ];
+
+    // Create buffers
     var boxVertexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
@@ -152,6 +161,7 @@ var InitDemo = function() {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
 
+    // Link vertex data to shader attributes
     var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
     var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
     gl.vertexAttribPointer(
@@ -174,10 +184,12 @@ var InitDemo = function() {
     gl.enableVertexAttribArray(positionAttribLocation);
     gl.enableVertexAttribArray(colorAttribLocation);
 
+    // Get uniform locations for transformation matrices
     var matWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
     var matViewUniformLocation = gl.getUniformLocation(program, 'mView');
     var matProjUniformLocation = gl.getUniformLocation(program, 'mProj');
 
+    // Define and set transformation matrices
     var worldMatrix = new Float32Array(16);
     var viewMatrix = new Float32Array(16);
     var projMatrix = new Float32Array(16);
@@ -196,6 +208,7 @@ var InitDemo = function() {
     glMatrix.mat4.identity(identityMatrix);
     var angle = 0;
 
+    // Main render loop
     var loop = function() {
         var angle = performance.now() / 1000 / 6 * 2 * Math.PI;
         glMatrix.mat4.rotateY(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
