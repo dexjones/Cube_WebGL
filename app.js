@@ -1,4 +1,3 @@
-// Vertex Shader: Handles vertex positions and transformations
 var vertexShaderText = 
 [
 'precision mediump float;',
@@ -13,11 +12,10 @@ var vertexShaderText =
 'void main()',
 '{',
 '   fragColor = vertColor;',
-'   gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);', // Transformation
+'   gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);',
 '}'
 ].join('\n');
 
-// Fragment Shader: Defines the colors
 var fragmentShaderText =
 [
 'precision mediump float;',
@@ -36,16 +34,16 @@ var InitDemo = function() {
     var gl = canvas.getContext('webgl');
 
     if (!gl) {
-        console.log('WebGL not supported, falling back on experimental WebGL')
+        console.log('WebGL not supported, falling back on experimental WebGL');
         gl = canvas.getContext('experimental-webgl');
     }
     
     if (!gl) {
         alert('Your browser does not support WebGL');
+        return;
     }
 
-    // Set clear color and enable depth testing
-    gl.clearColor(0.75, 0.85, 0.8, 1.0); // R, G, B, Opaque Values
+    gl.clearColor(0.75, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
@@ -53,7 +51,6 @@ var InitDemo = function() {
     gl.cullFace(gl.BACK);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    // Compile shaders
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -71,7 +68,6 @@ var InitDemo = function() {
         return;
     }
 
-    // Link shaders into a program
     var program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
@@ -81,14 +77,17 @@ var InitDemo = function() {
         return;
     }
 
-    //Tell OpenGL state machine which program should be active
-    // Use the program
+    gl.validateProgram(program);
+    if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
+        console.error('Error validating program!', gl.getProgramInfoLog(program));
+        return;
+    }
+
     gl.useProgram(program);
     
     // Define cube vertices and indices
     var boxVertices = 
-    [ // x, y, z              R,G,B
-        //Top
+    [
         -1.0,  1.0, -1.0,   0.5, 0.5, 0.5,
         -1.0,  1.0,  1.0,   0.5, 0.5, 0.5,
          1.0,  1.0,  1.0,   0.5, 0.5, 0.5,
@@ -101,10 +100,10 @@ var InitDemo = function() {
         -1.0,  1.0, -1.0,   0.75, 0.25, 0.5,
 
         //Right
-        1.0,  1.0,  1.0,    0.25, 0.25, 0.75,
-        1.0, -1.0,  1.0,    0.25, 0.25, 0.75,
-        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,
-        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,
+         1.0,  1.0,  1.0,    0.25, 0.25, 0.75,
+         1.0, -1.0,  1.0,    0.25, 0.25, 0.75,
+         1.0, -1.0, -1.0,    0.25, 0.25, 0.75,
+         1.0,  1.0, -1.0,    0.25, 0.25, 0.75,
 
         //Front
          1.0, 1.0,  1.0,   1.0, 0.0, 0.15,
@@ -130,7 +129,7 @@ var InitDemo = function() {
         // Top
         0, 1, 2,
         0, 2, 3,
-
+        
         // Left
         5, 4, 6,
         6, 4, 7,
@@ -142,7 +141,7 @@ var InitDemo = function() {
         // Front
         13, 12, 14,
         15, 14, 12,
-
+        
         // Back
         16, 17, 18,
         16, 18, 19,
@@ -165,20 +164,20 @@ var InitDemo = function() {
     var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
     var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
     gl.vertexAttribPointer(
-        positionAttribLocation, //Attribute Location
-        3, // Number of elements per attribute
-        gl.FLOAT, //Type of elements
-        gl.FALSE, //Not normalized
-        6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex, float = 4 
-        0 // Offset from the beginning of a single vertex to this attribute
+        positionAttribLocation,
+        3,
+        gl.FLOAT,
+        gl.FALSE,
+        6 * Float32Array.BYTES_PER_ELEMENT,
+        0
     );
     gl.vertexAttribPointer(
-        colorAttribLocation, //Attribute Location
-        3, // Number of elements per attribute
-        gl.FLOAT, //Type of elements
-        gl.FALSE, //Not normalized
-        6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex, float = 4 
-        3 * Float32Array.BYTES_PER_ELEMENT// Offset from the beginning of a single vertex to this attribute
+        colorAttribLocation,
+        3,
+        gl.FLOAT,
+        gl.FALSE,
+        6 * Float32Array.BYTES_PER_ELEMENT,
+        3 * Float32Array.BYTES_PER_ELEMENT
     );
 
     gl.enableVertexAttribArray(positionAttribLocation);
@@ -200,19 +199,35 @@ var InitDemo = function() {
     gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
     gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
-    
+
     var xRotationMatrix = new Float32Array(16);
     var yRotationMatrix = new Float32Array(16);
-    //Main render loop
     var identityMatrix = new Float32Array(16);
     glMatrix.mat4.identity(identityMatrix);
+
     var angle = 0;
 
-    // Main render loop
+    var fovSlider = document.getElementById("fovSlider");
+    var depthSlider = document.getElementById("depthSlider");
+
+    fovSlider.addEventListener("input", function() {
+        var fov = glMatrix.glMatrix.toRadian(fovSlider.value);
+        var depth = depthSlider.value;
+        glMatrix.mat4.perspective(projMatrix, fov, canvas.width / canvas.height, 0.1, depth);
+        gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+    });
+
+    depthSlider.addEventListener("input", function() {
+        var fov = glMatrix.glMatrix.toRadian(fovSlider.value);
+        var depth = depthSlider.value;
+        glMatrix.mat4.perspective(projMatrix, fov, canvas.width / canvas.height, 0.1, depth);
+        gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+    });
+
     var loop = function() {
-        var angle = performance.now() / 1000 / 6 * 2 * Math.PI;
-        glMatrix.mat4.rotateY(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
-        glMatrix.mat4.rotateX(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
+        angle = performance.now() / 1000 / 6 * 2 * Math.PI;
+        glMatrix.mat4.rotateY(yRotationMatrix, identityMatrix, angle);
+        glMatrix.mat4.rotateX(xRotationMatrix, identityMatrix, angle / 4);
         glMatrix.mat4.mul(worldMatrix, xRotationMatrix, yRotationMatrix);
         gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
 

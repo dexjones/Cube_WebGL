@@ -1,13 +1,22 @@
 <html>
     <head>
-        <title>WebGL - Rotating Cube</title>
+        <title>WebGL - Rotating Cube with Interactive Projection</title>
     </head>
     <body onload="InitDemo();">
-        <canvas id="game-surface" width = "800" height = "600">
+        <canvas id="game-surface" width="800" height="600">
             Your browser does not support HTML5
         </canvas>
         <br />
+        <div>
+            <label for="fovSlider">Adjust Field of View: </label>
+            <input id="fovSlider" type="range" min="10" max="180" step="1" value="45" title="Adjust field of view for the perspective projection matrix">
+        </div>
+        <div>
+            <label for="depthSlider">Adjust Depth: </label>
+            <input id="depthSlider" type="range" min="0.1" max="10" step="0.1" value="1000" title="Adjust depth for the orthogonal projection matrix">
+        </div>
         <script src="gl-matrix.js"></script>
         <script src="app.js"></script>
     </body>
 </html>
+
