@@ -210,19 +210,17 @@ var InitDemo = function() {
     var fovSlider = document.getElementById("fovSlider");
     var depthSlider = document.getElementById("depthSlider");
 
-    fovSlider.addEventListener("input", function() {
+    function updateProjectionMatrix() {
         var fov = glMatrix.glMatrix.toRadian(fovSlider.value);
-        var depth = depthSlider.value;
-        glMatrix.mat4.perspective(projMatrix, fov, canvas.width / canvas.height, 0.1, depth);
-        gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
-    });
+        var depth = parseFloat(depthSlider.value);
 
-    depthSlider.addEventListener("input", function() {
-        var fov = glMatrix.glMatrix.toRadian(fovSlider.value);
-        var depth = depthSlider.value;
         glMatrix.mat4.perspective(projMatrix, fov, canvas.width / canvas.height, 0.1, depth);
         gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
-    });
+
+    }
+
+    fovSlider.addEventListener("input", updateProjectionMatrix);
+    depthSlider.addEventListener("input", updateProjectionMatrix);
 
     var loop = function() {
         angle = performance.now() / 1000 / 6 * 2 * Math.PI;
@@ -239,3 +237,5 @@ var InitDemo = function() {
     };
     requestAnimationFrame(loop);
 };
+
+window.onload = InitDemo;
