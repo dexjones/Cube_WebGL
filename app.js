@@ -1,13 +1,13 @@
 var vertexShaderText = 
 [
-'precision mediump float;',
+'precision mediump float;', // Set the precision for float variables
 '',
-'attribute vec3 vertPosition;',
-'attribute vec3 vertColor;',
-'varying vec3 fragColor;',
-'uniform mat4 mWorld;',
-'uniform mat4 mView;',
-'uniform mat4 mProj;',
+'attribute vec3 vertPosition;', // Input vertex position
+'attribute vec3 vertColor;', // Input vertex color
+'varying vec3 fragColor;', // Output color to fragment shader
+'uniform mat4 mWorld;', // World transformation matrix
+'uniform mat4 mView;', // View transformation matrix
+'uniform mat4 mProj;', // Projection transformation matrix
 '',
 'void main()',
 '{',
@@ -16,20 +16,20 @@ var vertexShaderText =
 '}'
 ].join('\n');
 
+// Fragment Shader: Defines the colors
 var fragmentShaderText =
 [
-'precision mediump float;',
+'precision mediump float;', // Set the precision for float variables
 '',
-'varying vec3 fragColor;',
+'varying vec3 fragColor;', // Input color from vertex shader
 'void main()',
 '{',
-'   gl_FragColor = vec4(fragColor, 1.0);',
+'   gl_FragColor = vec4(fragColor, 1.0);', // Set the fragment color
 '}'
 ].join('\n');
 
 var InitDemo = function() {
-    console.log('This is working');
-
+    // Get the canvas and WebGL context
     var canvas = document.getElementById('game-surface');
     var gl = canvas.getContext('webgl');
 
@@ -43,6 +43,7 @@ var InitDemo = function() {
         return;
     }
 
+    // Set clear color and enable depth testing
     gl.clearColor(0.75, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
@@ -51,6 +52,7 @@ var InitDemo = function() {
     gl.cullFace(gl.BACK);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
+    // Compile shaders
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -68,18 +70,13 @@ var InitDemo = function() {
         return;
     }
 
+    // Link shaders into program
     var program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         console.error('Error linking program!', gl.getProgramInfoLog(program));
-        return;
-    }
-
-    gl.validateProgram(program);
-    if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-        console.error('Error validating program!', gl.getProgramInfoLog(program));
         return;
     }
 
@@ -100,10 +97,10 @@ var InitDemo = function() {
         -1.0,  1.0, -1.0,   0.75, 0.25, 0.5,
 
         //Right
-         1.0,  1.0,  1.0,    0.25, 0.25, 0.75,
-         1.0, -1.0,  1.0,    0.25, 0.25, 0.75,
-         1.0, -1.0, -1.0,    0.25, 0.25, 0.75,
-         1.0,  1.0, -1.0,    0.25, 0.25, 0.75,
+        1.0,  1.0,  1.0,    0.25, 0.25, 0.75,
+        1.0, -1.0,  1.0,    0.25, 0.25, 0.75,
+        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,
+        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,
 
         //Front
          1.0, 1.0,  1.0,   1.0, 0.0, 0.15,
@@ -141,7 +138,7 @@ var InitDemo = function() {
         // Front
         13, 12, 14,
         15, 14, 12,
-        
+
         // Back
         16, 17, 18,
         16, 18, 19,
@@ -151,11 +148,12 @@ var InitDemo = function() {
         22, 20, 23
     ];
 
-    // Create buffers
+    // Create buffers for cube vertices
     var boxVertexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
 
+    // Create buffers for cube indices
     var boxIndexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
@@ -164,12 +162,12 @@ var InitDemo = function() {
     var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
     var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
     gl.vertexAttribPointer(
-        positionAttribLocation,
-        3,
-        gl.FLOAT,
-        gl.FALSE,
-        6 * Float32Array.BYTES_PER_ELEMENT,
-        0
+        positionAttribLocation, 
+        3, // Number of elements per attribute (x, y, z)
+        gl.FLOAT, // Type of elements
+        gl.FALSE, // Not normalized
+        6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex (6 floats per vertex)
+        0 // Offset from the beginning of a single vertex to this attribute
     );
     gl.vertexAttribPointer(
         colorAttribLocation,
@@ -200,35 +198,29 @@ var InitDemo = function() {
     gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
 
+    // Rotation matrices
     var xRotationMatrix = new Float32Array(16);
     var yRotationMatrix = new Float32Array(16);
     var identityMatrix = new Float32Array(16);
     glMatrix.mat4.identity(identityMatrix);
 
-    var angle = 0;
-
-    var fovSlider = document.getElementById("fovSlider");
-    var depthSlider = document.getElementById("depthSlider");
-
-    function updateProjectionMatrix() {
-        var fov = glMatrix.glMatrix.toRadian(fovSlider.value);
-        var depth = parseFloat(depthSlider.value);
-
-        glMatrix.mat4.perspective(projMatrix, fov, canvas.width / canvas.height, 0.1, depth);
-        gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
-
-    }
-
-    fovSlider.addEventListener("input", updateProjectionMatrix);
-    depthSlider.addEventListener("input", updateProjectionMatrix);
+    // Variables to store rotation angles and zoom level
+    var angleX = 0;
+    var angleY = 0;
+    var zoom = -5;
 
     var loop = function() {
-        angle = performance.now() / 1000 / 6 * 2 * Math.PI;
-        glMatrix.mat4.rotateY(yRotationMatrix, identityMatrix, angle);
-        glMatrix.mat4.rotateX(xRotationMatrix, identityMatrix, angle / 4);
+        // Apply rotations
+        glMatrix.mat4.rotate(yRotationMatrix, identityMatrix, angleY, [0, 1, 0]);
+        glMatrix.mat4.rotate(xRotationMatrix, identityMatrix, angleX, [1, 0, 0]);
         glMatrix.mat4.mul(worldMatrix, xRotationMatrix, yRotationMatrix);
         gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
 
+        // Update view matrix with zoom
+        glMatrix.mat4.lookAt(viewMatrix, [0, 0, zoom], [0, 0, 0], [0, 1, 0]);
+        gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+
+        // Clear the canvas and draw the cube
         gl.clearColor(0.75, 0.85, 0.8, 1.0);
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
         gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
@@ -236,6 +228,47 @@ var InitDemo = function() {
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+
+    // Mouse event handlers for rotation
+    var mouseDown = false;
+    var lastMouseX = null;
+    var lastMouseY = null;
+
+    canvas.addEventListener('mousedown', function(event) {
+        mouseDown = true;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+    });
+
+    canvas.addEventListener('mouseup', function() {
+        mouseDown = false;
+    });
+
+    canvas.addEventListener('mousemove', function(event) {
+        if (!mouseDown) {
+            return;
+        }
+        var newX = event.clientX;
+        var newY = event.clientY;
+
+        var deltaX = newX - lastMouseX;
+        var deltaY = newY - lastMouseY;
+
+        // Update rotation angles based on mouse movement
+        angleY += deltaX * 0.01;
+        angleX += deltaY * 0.01;
+
+        lastMouseX = newX;
+        lastMouseY = newY;
+    });
+
+    // Slider event handler for zoom
+    var zoomSlider = document.getElementById('zoom-slider');
+    zoomSlider.addEventListener('input', function() {
+        var minZoom = -10; 
+        var maxZoom = -3;  
+        zoom = minZoom + (zoomSlider.value / 100) * (maxZoom - minZoom);
+    });
 };
 
 window.onload = InitDemo;
