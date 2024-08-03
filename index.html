@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebGL Texture Cube</title>
+    <title>WebGL Cube</title>
     <style>
         body {
             display: flex;
@@ -17,26 +17,32 @@
         #controls {
             margin-top: 10px;
         }
-        img {
-            display: none;
-        }
     </style>
 </head>
 <body>
     <canvas id="game-surface" width="800" height="600"></canvas>
-    <br>
-    <label for="zoom-slider">Zoom:</label>
-    <input type="range" id="zoom-slider" min="0" max="100" value="50">
-    <br>
-    <button id="toggle-shader-button">Toggle Shader</button>
-    <br>
-    <label for="visualization-dropdown">Visualization:</label>
-    <select id="visualization-dropdown">
-        <option value="Solid">Solid</option>
-        <option value="wireframe">Wireframe</option>
-        <option value="Texture">Texture</option>
-    </select>
-    <img id="crate-image" src="MetalSheet.png" width="0" height="0" crossOrigin="anonymous"></img>
+    <div id="controls">
+        <br>
+        <label for="zoom-slider">Zoom:</label>
+        <input type="range" id="zoom-slider" min="0" max="100" value="50">
+        <br>
+        <button id="toggle-shader-button">Toggle Shader</button>
+        <br>
+        <label for="visualization-dropdown">Visualization:</label>
+        <select id="visualization-dropdown">
+            <option value="Solid">Solid</option>
+            <option value="wireframe">Wireframe</option>
+        </select>
+        <br>
+        <label for="ambient-slider">Ambient Light:</label>
+        <input type="range" id="ambient-slider" min="0" max="100" value="20">
+        <br>
+        <label for="diffuse-slider">Diffuse Light:</label>
+        <input type="range" id="diffuse-slider" min="0" max="100" value="100">
+        <br>
+        <label for="transparency-slider">Transparency:</label>
+        <input type="range" id="transparency-slider" min="0" max="100" value="100">
+    </div>
     <script src="gl-matrix.js"></script>
     <script src="app.js"></script>
 </body>

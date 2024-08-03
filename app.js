@@ -5,12 +5,10 @@ var vertexShaderText =
 'attribute vec3 vertPosition;', 
 'attribute vec3 vertColor;', 
 'attribute vec3 vertNormal;', 
-'attribute vec2 vertTexCoord;', 
 'varying vec3 fragColor;', 
 'varying vec3 vNormal;', 
 'varying vec3 vPosition;', 
 'varying vec3 lightDirection;', 
-'varying vec2 fragTexCoord;', 
 'uniform mat4 mWorld;', 
 'uniform mat4 mView;', 
 'uniform mat4 mProj;', 
@@ -23,7 +21,6 @@ var vertexShaderText =
 '   vPosition = (mWorld * vec4(vertPosition, 1.0)).xyz;', 
 '   vec4 transformedLightPosition = mView * uLightPosition;', 
 '   lightDirection = normalize(transformedLightPosition.xyz - (mView * vec4(vPosition, 1.0)).xyz);',
-'   fragTexCoord = vertTexCoord;', 
 '   gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);',
 '}'
 ].join('\n');
@@ -36,7 +33,6 @@ var fragmentShaderText =
 'varying vec3 vNormal;', 
 'varying vec3 vPosition;', 
 'varying vec3 lightDirection;', 
-'varying vec2 fragTexCoord;', 
 'uniform vec4 uLightAmbient;', 
 'uniform vec4 uLightDiffuse;', 
 'uniform vec4 uLightSpecular;', 
@@ -44,7 +40,7 @@ var fragmentShaderText =
 'uniform vec4 uMaterialDiffuse;', 
 'uniform vec4 uMaterialSpecular;', 
 'uniform float uShininess;', 
-'uniform sampler2D sampler;', 
+'uniform float uAlpha;', 
 '',
 'void main()',
 '{',
@@ -57,8 +53,7 @@ var fragmentShaderText =
 '   vec4 specular = spec * uLightSpecular * uMaterialSpecular;',
 '   vec4 ambient = uLightAmbient * uMaterialAmbient;',
 '   vec4 color = ambient + diffuse + specular;',
-'   vec4 textureColor = texture2D(sampler, fragTexCoord);',
-'   gl_FragColor = vec4((color.rgb + textureColor.rgb) * textureColor.a, 1.0);',
+'   gl_FragColor = vec4(color.rgb, uAlpha);',
 '}'
 ].join('\n');
 
@@ -157,30 +152,30 @@ var InitDemo = function() {
 
     var boxVertices = 
     [
-        -1.0,  1.0, -1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,   0, 0,
-        -1.0,  1.0,  1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,   0, 1,
-         1.0,  1.0,  1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,   1, 1,
-         1.0,  1.0, -1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,   1, 0,
-        -1.0,  1.0,  1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,   0, 0,
-        -1.0, -1.0,  1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,   1, 0,
-        -1.0, -1.0, -1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,   1, 1,
-        -1.0,  1.0, -1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,   0, 1,
-        1.0,  1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   1, 1,
-        1.0, -1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   0, 1,
-        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,   0, 0,
-        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,   1, 0,
-        1.0, 1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   1, 1,
-        1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   1, 0,
-        -1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   0, 0,
-        -1.0, 1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   0, 1,
-        1.0,  1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,   0, 0,
-        1.0, -1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,   0, 1,
-        -1.0, -1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,   1, 1,
-        -1.0,  1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,   1, 0,
-        -1.0, -1.0,-1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,   1, 1,
-        -1.0, -1.0, 1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,   1, 0,
-        1.0, -1.0, 1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,   0, 0,
-        1.0, -1.0,-1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,   0, 1,
+        -1.0,  1.0, -1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,
+        -1.0,  1.0,  1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,
+         1.0,  1.0,  1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,
+         1.0,  1.0, -1.0,   0.5, 0.5, 0.5,   0.0,  1.0,  0.0,
+        -1.0,  1.0,  1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,
+        -1.0, -1.0,  1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,
+        -1.0, -1.0, -1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,
+        -1.0,  1.0, -1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,
+        1.0,  1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,
+        1.0, -1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,
+        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,
+        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,
+        1.0, 1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,
+        1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,
+        -1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,
+        -1.0, 1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,
+        1.0,  1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,
+        1.0, -1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,
+        -1.0, -1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,
+        -1.0,  1.0, -1.0,   0.0, 1.0, 0.15,   0.0,  0.0, -1.0,
+        -1.0, -1.0,-1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,
+        -1.0, -1.0, 1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,
+        1.0, -1.0, 1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,
+        1.0, -1.0,-1.0,   0.5, 0.5, 1.0,   0.0, -1.0,  0.0,
     ];
 
     var boxIndices = 
@@ -255,13 +250,12 @@ var InitDemo = function() {
         var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
         var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
         var normalAttribLocation = gl.getAttribLocation(program, 'vertNormal');
-        var texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexCoord');
         gl.vertexAttribPointer(
             positionAttribLocation, 
             3, 
             gl.FLOAT, 
             gl.FALSE, 
-            11 * Float32Array.BYTES_PER_ELEMENT, 
+            9 * Float32Array.BYTES_PER_ELEMENT, 
             0 
         );
         gl.vertexAttribPointer(
@@ -269,7 +263,7 @@ var InitDemo = function() {
             3,
             gl.FLOAT,
             gl.FALSE,
-            11 * Float32Array.BYTES_PER_ELEMENT,
+            9 * Float32Array.BYTES_PER_ELEMENT,
             3 * Float32Array.BYTES_PER_ELEMENT
         );
         gl.vertexAttribPointer(
@@ -277,22 +271,13 @@ var InitDemo = function() {
             3,
             gl.FLOAT,
             gl.FALSE,
-            11 * Float32Array.BYTES_PER_ELEMENT,
+            9 * Float32Array.BYTES_PER_ELEMENT,
             6 * Float32Array.BYTES_PER_ELEMENT
-        );
-        gl.vertexAttribPointer(
-            texCoordAttribLocation,
-            2,
-            gl.FLOAT,
-            gl.FALSE,
-            11 * Float32Array.BYTES_PER_ELEMENT,
-            9 * Float32Array.BYTES_PER_ELEMENT
         );
 
         gl.enableVertexAttribArray(positionAttribLocation);
         gl.enableVertexAttribArray(colorAttribLocation);
         gl.enableVertexAttribArray(normalAttribLocation);
-        gl.enableVertexAttribArray(texCoordAttribLocation);
     };
 
     var linkWireframeAttribs = function(program) {
@@ -302,7 +287,7 @@ var InitDemo = function() {
             3, 
             gl.FLOAT, 
             gl.FALSE, 
-            11 * Float32Array.BYTES_PER_ELEMENT, 
+            9 * Float32Array.BYTES_PER_ELEMENT, 
             0 
         );
 
@@ -322,30 +307,27 @@ var InitDemo = function() {
     var materialDiffuseLoc = gl.getUniformLocation(currentProgram, "uMaterialDiffuse");
     var materialSpecularLoc = gl.getUniformLocation(currentProgram, "uMaterialSpecular");
     var shininessLoc = gl.getUniformLocation(currentProgram, "uShininess");
-    var samplerLoc = gl.getUniformLocation(currentProgram, "sampler");
+    var alphaLoc = gl.getUniformLocation(currentProgram, "uAlpha");
 
     var lightPosition = [1.0, 1.0, 1.0, 1.0];
-    gl.uniform4fv(lightPositionLoc, lightPosition);
-    gl.uniform4fv(lightAmbientLoc, [0.2, 0.2, 0.2, 1.0]);
-    gl.uniform4fv(lightDiffuseLoc, [1.0, 1.0, 1.0, 1.0]);
-    gl.uniform4fv(lightSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-    gl.uniform4fv(materialAmbientLoc, [0.0, 1.0, 1.0, 1.0]);
-    gl.uniform4fv(materialDiffuseLoc, [0.0, 1.0, 1.0, 1.0]);
-    gl.uniform4fv(materialSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-    gl.uniform1f(shininessLoc, 80.0);
+    var ambientLight = [0.2, 0.2, 0.2, 1.0];
+    var diffuseLight = [1.0, 1.0, 1.0, 1.0];
+    var specularLight = [1.0, 1.0, 1.0, 1.0];
+    var materialAmbient = [0.0, 1.0, 1.0, 1.0];
+    var materialDiffuse = [0.0, 1.0, 1.0, 1.0];
+    var materialSpecular = [1.0, 1.0, 1.0, 1.0];
+    var shininess = 80.0;
+    var alpha = 1.0;
 
-    var boxTexture = gl.createTexture();
-    var image = document.getElementById('crate-image');
-    image.crossOrigin = "anonymous";
-    image.onload = function() {
-        gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-    };
+    gl.uniform4fv(lightPositionLoc, lightPosition);
+    gl.uniform4fv(lightAmbientLoc, ambientLight);
+    gl.uniform4fv(lightDiffuseLoc, diffuseLight);
+    gl.uniform4fv(lightSpecularLoc, specularLight);
+    gl.uniform4fv(materialAmbientLoc, materialAmbient);
+    gl.uniform4fv(materialDiffuseLoc, materialDiffuse);
+    gl.uniform4fv(materialSpecularLoc, materialSpecular);
+    gl.uniform1f(shininessLoc, shininess);
+    gl.uniform1f(alphaLoc, alpha);
 
     var worldMatrix = new Float32Array(16);
     var viewMatrix = new Float32Array(16);
@@ -367,6 +349,34 @@ var InitDemo = function() {
     var angleY = 0;
     var zoom = -5;
 
+    // Implement the painter's algorithm
+    var calculateDepth = function(vertices, indices) {
+        var depths = [];
+        for (var i = 0; i < indices.length; i += 3) {
+            var v1 = vertices.slice(indices[i] * 9, indices[i] * 9 + 3);
+            var v2 = vertices.slice(indices[i + 1] * 9, indices[i + 1] * 9 + 3);
+            var v3 = vertices.slice(indices[i + 2] * 9, indices[i + 2] * 9 + 3);
+            var depth = (v1[2] + v2[2] + v3[2]) / 3;
+            depths.push({ index: i, depth: depth });
+        }
+        return depths;
+    };
+
+    var paintersAlgorithm = function(depths) {
+        depths.sort(function(a, b) {
+            return b.depth - a.depth;
+        });
+    };
+
+    var renderPolygons = function(gl, depths) {
+        for (var i = 0; i < depths.length; i++) {
+            var index = depths[i].index;
+            var count = 3;
+            var offset = index * Uint16Array.BYTES_PER_ELEMENT;
+            gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, offset);
+        }
+    };
+
     var loop = function() {
         glMatrix.mat4.rotate(yRotationMatrix, identityMatrix, angleY, [0, 1, 0]);
         glMatrix.mat4.rotate(xRotationMatrix, identityMatrix, angleX, [1, 0, 0]);
@@ -379,22 +389,44 @@ var InitDemo = function() {
         gl.clearColor(0.75, 0.85, 0.8, 1.0);
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
+        var depths = calculateDepth(boxVertices, boxIndices);
+        paintersAlgorithm(depths);
+
         if (currentProgram === wireframeProgram) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxEdgeIndexBufferObject);
             gl.drawElements(gl.LINES, boxEdgeIndices.length, gl.UNSIGNED_SHORT, 0);
         } else {
-            if (currentProgram === program) {
-                gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-                gl.activeTexture(gl.TEXTURE0);
-                gl.uniform1i(samplerLoc, 0);
-            }
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
-            gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
+            renderPolygons(gl, depths);
         }
 
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+
+    var updateUniforms = function() {
+        gl.uniform4fv(lightAmbientLoc, ambientLight);
+        gl.uniform4fv(lightDiffuseLoc, diffuseLight);
+        gl.uniform1f(alphaLoc, alpha);
+    };
+
+    document.getElementById('ambient-slider').addEventListener('input', function(event) {
+        var value = event.target.value / 100;
+        ambientLight = [value, value, value, 1.0];
+        updateUniforms();
+    });
+
+    document.getElementById('diffuse-slider').addEventListener('input', function(event) {
+        var value = event.target.value / 100;
+        diffuseLight = [value, value, value, 1.0];
+        updateUniforms();
+    });
+
+    document.getElementById('transparency-slider').addEventListener('input', function(event) {
+        var value = event.target.value / 100;
+        alpha = value;
+        updateUniforms();
+    });
 
     var mouseDown = false;
     var lastMouseX = null;
@@ -451,16 +483,17 @@ var InitDemo = function() {
         materialDiffuseLoc = gl.getUniformLocation(currentProgram, "uMaterialDiffuse");
         materialSpecularLoc = gl.getUniformLocation(currentProgram, "uMaterialSpecular");
         shininessLoc = gl.getUniformLocation(currentProgram, "uShininess");
-        samplerLoc = gl.getUniformLocation(currentProgram, "sampler");
+        alphaLoc = gl.getUniformLocation(currentProgram, "uAlpha");
 
         gl.uniform4fv(lightPositionLoc, lightPosition);
-        gl.uniform4fv(lightAmbientLoc, [0.2, 0.2, 0.2, 1.0]);
-        gl.uniform4fv(lightDiffuseLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(lightSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialAmbientLoc, [0.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialDiffuseLoc, [0.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform1f(shininessLoc, 80.0);
+        gl.uniform4fv(lightAmbientLoc, ambientLight);
+        gl.uniform4fv(lightDiffuseLoc, diffuseLight);
+        gl.uniform4fv(lightSpecularLoc, specularLight);
+        gl.uniform4fv(materialAmbientLoc, materialAmbient);
+        gl.uniform4fv(materialDiffuseLoc, materialDiffuse);
+        gl.uniform4fv(materialSpecularLoc, materialSpecular);
+        gl.uniform1f(shininessLoc, shininess);
+        gl.uniform1f(alphaLoc, alpha);
 
         gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
         gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
@@ -474,13 +507,6 @@ var InitDemo = function() {
             currentProgram = wireframeProgram;
             gl.useProgram(currentProgram);
             linkWireframeAttribs(currentProgram);
-        } else if (visualization === 'Texture') {
-            currentProgram = program;
-            gl.useProgram(currentProgram);
-            linkAttribs(currentProgram);
-            gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.uniform1i(samplerLoc, 0);
         } else {
             currentProgram = program;
             gl.useProgram(currentProgram);
@@ -498,16 +524,17 @@ var InitDemo = function() {
         materialDiffuseLoc = gl.getUniformLocation(currentProgram, "uMaterialDiffuse");
         materialSpecularLoc = gl.getUniformLocation(currentProgram, "uMaterialSpecular");
         shininessLoc = gl.getUniformLocation(currentProgram, "uShininess");
-        samplerLoc = gl.getUniformLocation(currentProgram, "sampler");
+        alphaLoc = gl.getUniformLocation(currentProgram, "uAlpha");
 
         gl.uniform4fv(lightPositionLoc, lightPosition);
-        gl.uniform4fv(lightAmbientLoc, [0.2, 0.2, 0.2, 1.0]);
-        gl.uniform4fv(lightDiffuseLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(lightSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialAmbientLoc, [0.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialDiffuseLoc, [0.0, 1.0, 1.0, 1.0]);
-        gl.uniform4fv(materialSpecularLoc, [1.0, 1.0, 1.0, 1.0]);
-        gl.uniform1f(shininessLoc, 80.0);
+        gl.uniform4fv(lightAmbientLoc, ambientLight);
+        gl.uniform4fv(lightDiffuseLoc, diffuseLight);
+        gl.uniform4fv(lightSpecularLoc, specularLight);
+        gl.uniform4fv(materialAmbientLoc, materialAmbient);
+        gl.uniform4fv(materialDiffuseLoc, materialDiffuse);
+        gl.uniform4fv(materialSpecularLoc, materialSpecular);
+        gl.uniform1f(shininessLoc, shininess);
+        gl.uniform1f(alphaLoc, alpha);
 
         gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
         gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
