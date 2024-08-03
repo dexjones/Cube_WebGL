@@ -24,7 +24,7 @@ var vertexShaderText =
 '   vec4 transformedLightPosition = mView * uLightPosition;', 
 '   lightDirection = normalize(transformedLightPosition.xyz - (mView * vec4(vPosition, 1.0)).xyz);',
 '   fragTexCoord = vertTexCoord;', 
-'   gl_Position = mProj * mView * vec4(vPosition, 1.0);',
+'   gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);',
 '}'
 ].join('\n');
 
@@ -58,7 +58,7 @@ var fragmentShaderText =
 '   vec4 ambient = uLightAmbient * uMaterialAmbient;',
 '   vec4 color = ambient + diffuse + specular;',
 '   vec4 textureColor = texture2D(sampler, fragTexCoord);',
-'   gl_FragColor = vec4((color.rgb * fragColor + textureColor.rgb) * textureColor.a, 1.0);',
+'   gl_FragColor = vec4((color.rgb + textureColor.rgb) * textureColor.a, 1.0);',
 '}'
 ].join('\n');
 
@@ -167,8 +167,8 @@ var InitDemo = function() {
         -1.0,  1.0, -1.0,   0.75, 0.25, 0.5,  -1.0,  0.0,  0.0,   0, 1,
         1.0,  1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   1, 1,
         1.0, -1.0,  1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   0, 1,
-        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   0, 0,
-        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,  1.0,  0.0,  0.0,   1, 0,
+        1.0, -1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,   0, 0,
+        1.0,  1.0, -1.0,    0.25, 0.25, 0.75,  1.0,   0.0,  0.0,   1, 0,
         1.0, 1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   1, 1,
         1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   1, 0,
         -1.0,-1.0,  1.0,   1.0, 0.0, 0.15,   0.0,  0.0,  1.0,   0, 0,
